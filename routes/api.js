@@ -56,8 +56,15 @@ async function processImages(requestId, products) {
     for (const product of products) {
         const outputUrls = [];
         for (const url of product.inputImageUrls) {
-            const outputPath = await processImage(url);
-            outputUrls.push(outputPath); // Save local path or upload to a storage service and save URL
+
+            try {
+                const s3Url = await processImage(url);
+                outputUrls.push(s3Url); // Save the S3 URL
+            } catch (error) {
+                console.error(`Error processing image for product ${product.productName}:`, error);
+            }
+            // const outputPath = await processImage(url);
+            // outputUrls.push(outputPath); // Save local path or upload to a storage service and save URL
         }
         product.outputImageUrls = outputUrls;
     }
