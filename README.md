@@ -84,7 +84,13 @@ This project provides an API to efficiently process image data from CSV files. T
 
 - **URL**: `/api/status`
 - **Method**: `GET`
-- **Description**: Allows users to query the processing status using the request ID.
+- **Description**: Allows users to query the processing status using the request ID. Expected CSV file format :-
+
+    ``` bash
+    "Serial Number","Product Name","Input Image Urls"
+    1,"SKU1","https://farm3.staticflickr.com/2042/2203964933_f1b80a18ba.jpg,https://farm3.staticflickr.com/2042/2203964933_f1b80a18ba.jpg,https://farm3.staticflickr.com/2042/2203964933_f1b80a18ba.jpg"
+    2,"SKU2","https://farm3.staticflickr.com/2042/2203964933_f1b80a18ba.jpg,https://farm3.staticflickr.com/2042/2203964933_f1b80a18ba.jpg"
+    ```
 - **Query Parameters**:
     - `requestId`: The unique request ID returned from the upload endpoint.
 - **Request Example**:
