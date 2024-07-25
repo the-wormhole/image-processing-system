@@ -115,3 +115,9 @@ This project provides an API to efficiently process image data from CSV files. T
         ]
     }
     ```
+## Postman Collection
+
+A Postman collection is provided to test the API endpoints. You can find the Postman Collection here - https://documenter.getpostman.com/view/17270858/2sA3kYhzYW
+## License
+
+This project is licensed under the MIT License.    
