@@ -6,6 +6,7 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const Request = require('../models/request');
 const { processImage } = require('../handlers/imageProcessingHandler');
+const validateCSV = require('../handlers/validationHandler');
 
 const router = express.Router();
 const upload = multer({ dest: 'tmp/uploads/' });
@@ -18,38 +19,49 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         return res.status(400).json({ error: 'No file uploaded' });
     }
     const filePath = req.file.path;
-    
-    fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (row) => {
-            fileRows.push(row);
-        })
-        .on('end', async () => {
-            try {
-                const products = fileRows.map((row) => ({
-                    serialNumber: row['Serial Number'],
-                    productName: row['Product Name'],
-                    inputImageUrls: row['Input Image Urls'].split(','),
-                    outputImageUrls: []
-                }));
+    try{
 
-                await Request.create({ requestId, status: 'Processing', products });
+        await validateCSV(filePath);
+        
+        fs.createReadStream(filePath)
+            .pipe(csv())
+            .on('data', (row) => {
+                fileRows.push(row);
+            })
+            .on('end', async () => {
+                try {
+                    const products = fileRows.map((row) => ({
+                        serialNumber: Number(row['Serial Number']),
+                        productName: row['Product Name'],
+                        inputImageUrls: row['Input Image Urls'].split(','),
+                        outputImageUrls: []
+                    }));
 
-                res.status(200).json({ requestId });
-                processImages(requestId, products);
-            } catch (processError) {
-                console.error('Error processing images - ', processError);
-                res.status(500).json({ error: 'Error processing images' });
-            } finally {
-                fs.unlink(filePath, (err) => {
-                    if (err) console.error('Error deleting temporary file - ', err);
-                });
-            }
-        })
-        .on('error', (err) => {
-            console.error('CSV Parsing Error - ', err);
-            res.status(500).json({ error: 'Error reading CSV file' });
-        });
+                    await Request.create({ requestId, status: 'Processing', products });
+
+                    res.status(200).json({ requestId });
+                    processImages(requestId, products);
+                } catch (processError) {
+                    console.error('Error processing images - ', processError);
+                    res.status(500).json({ error: 'Error processing images' });
+                } finally {
+                    fs.unlink(filePath, (err) => {
+                        if (err) console.error('Error deleting temporary file - ', err);
+                    });
+                }
+            })
+            .on('error', (err) => {
+                console.error('CSV Parsing Error - ', err);
+                res.status(500).json({ error: 'Error reading CSV file' });
+            });
+
+    }catch(validationError){
+        console.error('CSV Validation Error - ', validationError);
+        res.status(400).json({ error: validationError.message });
+        fs.unlink(filePath, (err) => {
+            if (err) console.error('Error deleting temporary file - ', err);
+        });        
+    } 
 });
 
 async function processImages(requestId, products) {
@@ -70,7 +82,7 @@ async function processImages(requestId, products) {
     }
 
     await Request.updateOne({ requestId }, { status: 'Completed', products });
-    // Optionally trigger webhook here
+
 }
 
 router.get('/status/:requestId', async (req, res) => {

@@ -6,9 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const s3 = require('../awsConfig');
 
 const downloadImage = async (url) => {
-    // console.log("cool");
 
-    // Add a check for empty urls to ensure inappropriate requests
     try {
         const response = await axios({
             url,
